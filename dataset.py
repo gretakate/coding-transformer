@@ -7,7 +7,7 @@ class BilingualDataset(Dataset):
     
     def __init__(self, ds, tokenizer_src, tokenizer_tgt, src_lang, tgt_lang, seq_len) -> None:
         super().__init__()
-        
+        self.seq_len = seq_len
         self.ds = ds
         self.tokenizer_src = tokenizer_src
         self.tokenizer_tgt = tokenizer_tgt
@@ -40,28 +40,31 @@ class BilingualDataset(Dataset):
         encoder_input = torch.cat(
             [
                 self.sos_token,
-                torch.Tensor(enc_input_tokens, dtype=torch.int64),
+                torch.tensor(enc_input_tokens, dtype=torch.int64),
                 self.eos_token,
-                torch.Tensor([self.pad_token] * enc_num_padding_tokens, dtype=torch.int64)
-            ]
+                torch.tensor([self.pad_token] * enc_num_padding_tokens, dtype=torch.int64)
+            ],
+            dim=0,
         )
         
         # Add SOS to the decoder input
         decoder_input = torch.cat(
             [
                 self.sos_token,
-                torch.Tensor(dec_input_tokens, dtype=torch.int64),
-                torch.Tensor([self.pad_token] * dec_num_padding_tokens, dtype=torch.int64)
-            ]
+                torch.tensor(dec_input_tokens, dtype=torch.int64),
+                torch.tensor([self.pad_token] * dec_num_padding_tokens, dtype=torch.int64)
+            ],
+            dim=0,
         )
         
         # Add EOS to the label (what we expect as output from the decoder)
         label = torch.cat(
             [
-                torch.Tensor(dec_input_tokens, dtype=torch.int64),
+                torch.tensor(dec_input_tokens, dtype=torch.int64),
                 self.eos_token,
-                torch.Tensor([self.pad_token] * dec_num_padding_tokens, dtype=torch.int64)
-            ]
+                torch.tensor([self.pad_token] * dec_num_padding_tokens, dtype=torch.int64)
+            ],
+            dim=0,
         )
         
         assert encoder_input.size(0) == self.seq_len

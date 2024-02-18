@@ -247,7 +247,7 @@ class Decoder(nn.Module):
     def __init__(self, features: int, layers: nn.ModuleList) -> None:
         super().__init__()
         self.layers = layers
-        self.norm = LayerNormalization
+        self.norm = LayerNormalization(features)
         
     def forward(self, x, encoder_output, src_mask, tgt_mask):
         for layer in self.layers:
@@ -338,7 +338,7 @@ def build_transformer(src_vocab_size: int, tgt_vocab_size: int, src_seq_len: int
     for _ in range(N):
         encoder_self_attention_block = MultiHeadAttentionBlock(d_model, h, dropout)
         feed_forward_block = FeedForwardBlock(d_model, d_ff, dropout)
-        encoder_block = EncoderBlock(encoder_self_attention_block, feed_forward_block, dropout)
+        encoder_block = EncoderBlock(d_model, encoder_self_attention_block, feed_forward_block, dropout)
         encoder_blocks.append(encoder_block)
         
     # Create the Decoder blocks
