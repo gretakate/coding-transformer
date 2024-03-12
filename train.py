@@ -24,11 +24,11 @@ from tqdm import tqdm
 
 # To get around bad huggingface SSL certificate error
 import os
-os.environ['CURL_CA_BUNDLE'] = ''
-os.environ['REQUESTS_CA_BUNDLE'] = ''
+# os.environ['CURL_CA_BUNDLE'] = ''
+# os.environ['REQUESTS_CA_BUNDLE'] = ''
 
 # Because mps does not currently support backward()
-os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
+# os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
 
 def greedy_decode(model, source, source_mask, tokenizer_src, tokenizer_tgt, max_len, device):
     sos_idx = tokenizer_tgt.token_to_id('[SOS]')
