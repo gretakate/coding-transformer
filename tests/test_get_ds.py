@@ -2,15 +2,6 @@ import pytest
 from train import get_ds, build_tokenizer
 from unittest.mock import patch
 
-# @pytest.fixture
-# def config():
-#     return {
-#         'datasource': 'dataset.txt',
-#         'lang_src': 'en',
-#         'lang_tgt': 'fr',
-#         'seq_len': 50,
-#         'batch_size': 32
-#     }
     
 def get_or_build_tokenizer_mock_function(config, ds_raw, src_lang):
     return build_tokenizer(ds_raw, src_lang)
