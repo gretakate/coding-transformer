@@ -190,11 +190,14 @@ def get_or_build_tokenizer(config, dataset, lang):
     """
     tokenizer_path = Path(config['tokenizer_file'].format(lang))
     if not Path.exists(tokenizer_path):
+        # Make sure the directory is created
+        tokenizer_directory, _ = os.path.split(tokenizer_path)
+        Path(tokenizer_directory).mkdir(parents=True, exist_ok=True)
+        
         tokenizer = Tokenizer(WordLevel(unk_token='[UNK]'))
         tokenizer.pre_tokenizer = Whitespace()
         trainer = WordLevelTrainer(special_tokens = ["[UNK]", "[PAD]", "[SOS]", "[EOS]"], min_frequency=2)
         tokenizer.train_from_iterator(get_all_sentences(dataset, lang), trainer=trainer)
-        # TODO: Make sure this works even if the directory doesn't exist
         tokenizer.save(str(tokenizer_path))
     else:
         tokenizer = Tokenizer.from_file(str(tokenizer_path))
