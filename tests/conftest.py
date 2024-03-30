@@ -1,6 +1,6 @@
 import pytest
 from train import build_tokenizer
-
+from model import build_transformer
 
 
 @pytest.fixture
@@ -57,7 +57,13 @@ def config(src_lang, tgt_lang):
         'lang_src': src_lang,
         'lang_tgt': tgt_lang,
         'seq_len': 50,
-        'batch_size': 5
+        'batch_size': 5,
+        "lr": 10**-4,  # learning rate - possible to change during training but out of scope for this project
+        "d_model": 512,
+        "N": 6,
+        "h": 8,
+        "dropout": 0.1,
+        "d_ff": 2048
     }
 
 @pytest.fixture
@@ -69,3 +75,9 @@ def tokenizer_src(ds_raw, src_lang):
 def tokenizer_tgt(ds_raw, tgt_lang):
     """Creates a fixture for the source language tokenizer."""
     return build_tokenizer(ds_raw, tgt_lang)
+
+@pytest.fixture
+def dummmy_model():
+    src_vocab_size = tokenizer_src.get_vocab_size()
+    tgt_vocab_size = tokenizer_tgt.get_vocab_size()
+    return build_transformer(src_vocab_size, tgt_vocab_size, config['seq_len'], config['seq_len'], config['d_model'], config['N'], config['h'], config['dropout'], config['d_ff'])
