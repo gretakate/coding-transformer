@@ -173,6 +173,23 @@ def get_all_sentences(ds, lang):
     for item in ds:
         yield item['translation'][lang]
 
+def build_tokenizer(dataset, lang):
+    """
+    Build a tokenizer for a specific language.
+
+    Args:
+    - dataset (Iterable): Iterable dataset containing text samples.
+    - lang (str): Language code specifying the language of the text samples.
+
+    Returns:
+    - tokenizer (Tokenizer): The tokenizer object.
+    """
+    tokenizer = Tokenizer(WordLevel(unk_token='[UNK]'))
+    tokenizer.pre_tokenizer = Whitespace()
+    trainer = WordLevelTrainer(special_tokens = ["[UNK]", "[PAD]", "[SOS]", "[EOS]"], min_frequency=2)
+    tokenizer.train_from_iterator(get_all_sentences(dataset, lang), trainer=trainer)
+    return tokenizer
+
 def get_or_build_tokenizer(config, dataset, lang):
     """
     Get or build a tokenizer for a specific language.
@@ -304,8 +321,7 @@ def train_model(config):
     model_filename = latest_weights_file_path(config) if preload == 'latest' else get_weights_file_path(config, preload) if preload else None
     if model_filename:
         print(f"Loading model {model_filename}")
-        state = torch.load(model_filename)
-        torch.load(model_filename, map_location=torch.device(device))
+        state = torch.load(model_filename, map_location=torch.device(device))
         initial_epoch = state['epoch'] + 1
         optimizer.load_state_dict(state['optimizer_state_dict'])
         global_step = state['global_step']
