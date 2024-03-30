@@ -30,7 +30,7 @@ import os
 # Because mps does not currently support backward()
 # os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
 
-def greedy_decode(model, source, source_mask, tokenizer_src, tokenizer_tgt, max_len, device):
+def greedy_decode(model, source, source_mask, tokenizer_tgt, max_len, device):
     sos_idx = tokenizer_tgt.token_to_id('[SOS]')
     eos_idx = tokenizer_tgt.token_to_id('[EOS]')
 
@@ -87,7 +87,7 @@ def run_validation(model, validation_ds, tokenizer_src, tokenizer_tgt, max_len, 
             assert encoder_input.size(
                 0) == 1, "Batch size must be 1 for validation"
 
-            model_out = greedy_decode(model, encoder_input, encoder_mask, tokenizer_src, tokenizer_tgt, max_len, device)
+            model_out = greedy_decode(model, encoder_input, encoder_mask, tokenizer_tgt, max_len, device)
 
             source_text = batch["src_text"][0]
             target_text = batch["tgt_text"][0]
@@ -185,8 +185,8 @@ def get_model(config, vocab_src_len, vocab_tgt_len):
 
 def train_model(config):
     # Define the device on which to store tensors
-    device = "cuda" if torch.cuda.is_available() else "mps" if torch.has_mps or torch.backends.mps.is_available() else "cpu"
-    # device = 'cpu'  # Having to do this because of https://github.com/pytorch/pytorch/issues/77764 with MPS
+    # device = "cuda" if torch.cuda.is_available() else "mps" if torch.has_mps or torch.backends.mps.is_available() else "cpu"
+    device = 'cpu'  # Having to do this because of https://github.com/pytorch/pytorch/issues/77764 with MPS
     print(f"Using device {device}")
     device = torch.device(device)
     
@@ -211,15 +211,16 @@ def train_model(config):
     if model_filename:
         print(f"Loading model {model_filename}")
         state = torch.load(model_filename)
+        torch.load(model_filename, map_location=torch.device(device))
         initial_epoch = state['epoch'] + 1
         optimizer.load_state_dict(state['optimizer_state_dict'])
         global_step = state['global_step']
     else:
         print('No model to preload, starting from scratch')
         
-    # We don't want the padding token to contribute to the loss
+    # We don't want the padding token to contribute to the loss- use tgt PAD token because both proj_output and label are in the target domain
     # Using label smoothing
-    loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer_src.token_to_id('[PAD]'), label_smoothing=0.1).to(device)
+    loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer_tgt.token_to_id('[PAD]'), label_smoothing=0.1).to(device)
     
     # Training loop
     for epoch in range(initial_epoch, config['num_epochs']):
