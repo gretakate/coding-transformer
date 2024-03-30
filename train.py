@@ -31,6 +31,20 @@ import os
 # os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
 
 def greedy_decode(model, source, source_mask, tokenizer_tgt, max_len, device):
+    """
+    Greedy decoding function for sequence generation using a transformer-based model.
+
+    Args:
+    - model (torch.nn.Module): The transformer model for sequence generation.
+    - source (torch.Tensor): The input source sequence tensor.
+    - source_mask (torch.Tensor): The mask tensor for the source sequence.
+    - tokenizer_tgt (Tokenizer): The target sequence tokenizer.
+    - max_len (int): Maximum length of the generated sequence.
+    - device (str): Device ('cpu' or 'cuda') to run the model.
+
+    Returns:
+    - decoded_sequence (torch.Tensor): The decoded sequence tensor.
+    """
     sos_idx = tokenizer_tgt.token_to_id('[SOS]')
     eos_idx = tokenizer_tgt.token_to_id('[EOS]')
 
@@ -61,6 +75,23 @@ def greedy_decode(model, source, source_mask, tokenizer_tgt, max_len, device):
     return decoder_input.squeeze(0)
 
 def run_validation(model, validation_ds, tokenizer_tgt, max_len, device, print_msg, global_step, writer, num_examples=2):
+    """
+    Run validation on a dataset using a transformer-based model and calculate evaluation metrics.
+
+    Args:
+    - model (torch.nn.Module): The Transformer model to validate.
+    - validation_ds (torch.utils.data.Dataset): The validation dataset.
+    - tokenizer_tgt (Tokenizer): The target sequence tokenizer.
+    - max_len (int): Maximum length of the generated sequence.
+    - device (str): Device ('cpu' or 'cuda') to run the model.
+    - print_msg (function): Function for printing messages.
+    - global_step (int): Current global step for tensorboard logging.
+    - writer (SummaryWriter): Tensorboard SummaryWriter for logging.
+    - num_examples (int): Number of examples to print during validation (default is 2).
+
+    Returns:
+    - None
+    """
     model.eval()
     count = 0
 
@@ -129,22 +160,59 @@ def run_validation(model, validation_ds, tokenizer_tgt, max_len, device, print_m
         
         
 def get_all_sentences(ds, lang):
+    """
+    Generator function to extract all sentences of a specific language from a dataset.
+
+    Args:
+    - ds (Iterable): Iterable dataset containing translation pairs.
+    - lang (str): Language code specifying the target language.
+
+    Yields:
+    - sentence (str): A sentence in the specified language.
+    """
     for item in ds:
         yield item['translation'][lang]
 
 def get_or_build_tokenizer(config, dataset, lang):
+    """
+    Get or build a tokenizer for a specific language.
+
+    If the tokenizer file does not exist, a new tokenizer is built and trained using the provided dataset.
+    Otherwise, the existing tokenizer is loaded from the file.
+
+    Args:
+    - config (dict): Configuration dictionary containing tokenizer file paths.
+    - dataset (Iterable): Iterable dataset containing text samples.
+    - lang (str): Language code specifying the language of the text samples.
+
+    Returns:
+    - tokenizer (Tokenizer): The tokenizer object.
+    """
     tokenizer_path = Path(config['tokenizer_file'].format(lang))
     if not Path.exists(tokenizer_path):
         tokenizer = Tokenizer(WordLevel(unk_token='[UNK]'))
         tokenizer.pre_tokenizer = Whitespace()
         trainer = WordLevelTrainer(special_tokens = ["[UNK]", "[PAD]", "[SOS]", "[EOS]"], min_frequency=2)
         tokenizer.train_from_iterator(get_all_sentences(dataset, lang), trainer=trainer)
+        # TODO: Make sure this works even if the directory doesn't exist
         tokenizer.save(str(tokenizer_path))
     else:
         tokenizer = Tokenizer.from_file(str(tokenizer_path))
     return tokenizer
 
 def get_ds(config):
+    """
+    Create training and validation dataloaders along with tokenizers from a given configuration.
+
+    Args:
+    - config (dict): Configuration dictionary containing dataset and model parameters.
+
+    Returns:
+    - train_dataloader (DataLoader): Dataloader for the training dataset.
+    - val_dataloader (DataLoader): Dataloader for the validation dataset.
+    - tokenizer_src (Tokenizer): Tokenizer for the source language.
+    - tokenizer_tgt (Tokenizer): Tokenizer for the target language.
+    """
     ds_raw = load_dataset(f"{config['datasource']}", f"{config['lang_src']}-{config['lang_tgt']}", split="train")
     
     # Build tokenizers
@@ -179,14 +247,37 @@ def get_ds(config):
 
 
 def get_model(config, vocab_src_len, vocab_tgt_len):
+    """
+    Create a transformer model based on the provided configuration and vocabulary sizes.
+
+    Args:
+    - config (dict): Configuration dictionary containing model parameters.
+    - vocab_src_len (int): Size of the source language vocabulary.
+    - vocab_tgt_len (int): Size of the target language vocabulary.
+
+    Returns:
+    - model: Transformer model.
+    """
     # Sticking with most defaults
+    # TODO: Allow for more configurations
     model = build_transformer(vocab_src_len, vocab_tgt_len, config['seq_len'], config['seq_len'], config['d_model'])
     return model
 
 def train_model(config):
+    """
+    Train a transformer model based on the provided configuration. 
+    Save model weights and tokenizers to directories specified in the configuration. 
+    Training can be resumed from checkpoints specified in the configuration.
+
+    Args:
+    - config (dict): Configuration dictionary containing training parameters.
+
+    Returns:
+    - None
+    """
     # Define the device on which to store tensors
-    # device = "cuda" if torch.cuda.is_available() else "mps" if torch.has_mps or torch.backends.mps.is_available() else "cpu"
-    device = 'cpu'  # Having to do this because of https://github.com/pytorch/pytorch/issues/77764 with MPS
+    device = "cuda" if torch.cuda.is_available() else "mps" if torch.has_mps or torch.backends.mps.is_available() else "cpu"
+    # device = 'cpu'  # Having to do this because of https://github.com/pytorch/pytorch/issues/77764 with MPS
     print(f"Using device {device}")
     device = torch.device(device)
     
