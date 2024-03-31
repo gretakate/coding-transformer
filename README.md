@@ -48,7 +48,17 @@ Use `local_inference.ipynb` as a guide for running inference locally. Make sure 
 
 If you want to try out inference from the model I uploaded to HuggingFace, open this Colab notebook! (TODO)
 
-Or, try it out in the interactive app [here]()! (TODO)
+Or, try it out in the interactive app [here](https://huggingface.co/spaces/gretakate/test_translation_demo)!
+
+*Disclaimer: Don't use this as an actual translation tool...as you'll see, as of right now, some translations are still quite bad. However, it's very interesting to see what the model gets wrong and how you can kind of see, at least semantically, where it might be coming from. 
+
+Some personal favorites I found during training and while playing around with the model:
+
+```
+ORIGINAL TEXT: What's for dinner?
+ITALIAN TRANSLATION: Che gusto a pranzo ?
+TRANSLATES BACK TO: What is the taste for lunch?
+```
 
 
 # Roadmap
