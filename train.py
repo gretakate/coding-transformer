@@ -283,6 +283,11 @@ def get_model(config, vocab_src_len, vocab_tgt_len):
     model = build_transformer(vocab_src_len, vocab_tgt_len, config['seq_len'], config['seq_len'], config['d_model'])
     return model
 
+
+def get_device():
+    device = "cuda" if torch.cuda.is_available() else "mps" if torch.has_mps or torch.backends.mps.is_available() else "cpu"
+    return device
+
 def train_model(config):
     """
     Train a transformer model based on the provided configuration. 
@@ -296,7 +301,7 @@ def train_model(config):
     - None
     """
     # Define the device on which to store tensors
-    device = "cuda" if torch.cuda.is_available() else "mps" if torch.has_mps or torch.backends.mps.is_available() else "cpu"
+    device = get_device()
     # device = 'cpu'  # Having to do this because of https://github.com/pytorch/pytorch/issues/77764 with MPS
     print(f"Using device {device}")
     device = torch.device(device)

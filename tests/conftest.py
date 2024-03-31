@@ -52,18 +52,23 @@ def device():
 @pytest.fixture
 def config(src_lang, tgt_lang):
     return {
-        'tokenizer_file': 'tokenizer_{}.json',  # Example tokenizer file path format
+        'batch_size': 5,
+        "d_ff": 2048,
+        "d_model": 512,
         'datasource': 'dataset.txt',
+        "dropout": 0.1,
+        'experiment_name': 'test_experiment',
+        "h": 8,
         'lang_src': src_lang,
         'lang_tgt': tgt_lang,
-        'seq_len': 50,
-        'batch_size': 5,
-        "lr": 10**-4,  # learning rate - possible to change during training but out of scope for this project
-        "d_model": 512,
+        "lr": 10**-4,
+        "model_basename": "tmodel_test_",
+        "model_folder": "weights_test",
         "N": 6,
-        "h": 8,
-        "dropout": 0.1,
-        "d_ff": 2048
+        "num_epochs": 2,
+        'preload': None,
+        'seq_len': 50,
+        'tokenizer_file': 'tokenizer_{}.json',
     }
 
 @pytest.fixture
